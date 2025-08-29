@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sumar Pacient - AI Medical Integrat</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif}
+    body{background:#f8fafc;color:#334155;line-height:1.5}
+    .container{max-width:1400px;margin:0 auto;padding:20px}
+
+    /* PATIENT HEADER */
+    .patient-header{background:linear-gradient(135deg,#1e40af 0%,#3b82f6 100%);color:#fff;padding:24px;border-radius:12px;margin-bottom:20px;box-shadow:0 8px 32px rgba(59,130,246,.3)}
+    .patient-info{display:grid;grid-template-columns:2fr 1fr;gap:24px;align-items:center}
+    .patient-primary{display:flex;align-items:center;gap:16px}
+    .patient-avatar{width:64px;height:64px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold}
+    .patient-details h1{font-size:28px;margin-bottom:8px;font-weight:600}
+    .patient-meta{display:flex;gap:20px;font-size:14px;opacity:.9}
+    .patient-actions{display:flex;flex-direction:column;gap:12px}
+    .btn{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-weight:500;transition:.2s;text-align:center;text-decoration:none;display:inline-block}
+    .btn-white{background:#fff;color:#1e40af}
+    .btn-white:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.15)}
+
+    /* COLLAPSIBLE SECTIONS */
+    .collapsible-section{background:#fff;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.08);margin-bottom:20px;border:1px solid #e5e7eb;overflow:hidden}
+    .collapsible-header{padding:16px 20px;background:linear-gradient(135deg,#f8fafc,#e2e8f0);border-bottom:1px solid #e5e7eb;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:.2s;user-select:none;touch-action:manipulation}
+    .collapsible-header:hover{background:linear-gradient(135deg,#e2e8f0,#cbd5e1)}
+    .collapsible-header.collapsed{border-bottom:none}
+    .collapsible-title{display:flex;align-items:center;gap:8px;font-weight:600;color:#1e40af;flex:1;pointer-events:none}
+    .collapse-icon{font-size:18px;color:#64748b;transition:transform .3s ease;user-select:none;pointer-events:none}
+    .collapsible-header.collapsed .collapse-icon{transform:rotate(-90deg)}
+    .collapsible-content{padding:20px;transition:max-height .3s ease,opacity .3s ease,padding .3s ease;overflow:hidden;max-height:2000px;opacity:1}
+    .collapsible-content.collapsed{max-height:0!important;padding:0 20px!important;opacity:0!important}
+
+    /* ALERTS */
+    .alerts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+    .alert-item{background:#fff;padding:12px;border-radius:6px;border-left:3px solid #ef4444}
+
+    /* DISEASES - SCROLL ORIZONTAL */
+    .diseases-grid{display:flex;overflow-x:auto;gap:20px;padding:10px 0;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+    .diseases-grid::-webkit-scrollbar{height:8px}
+    .diseases-grid::-webkit-scrollbar-track{background:#f1f5f9;border-radius:4px}
+    .diseases-grid::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
+    .diseases-grid::-webkit-scrollbar-thumb:hover{background:#94a3b8}
+    .disease-card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.08);border:1px solid #e2e8f0;transition:transform .2s,box-shadow .2s;min-width:380px;flex-shrink:0;max-width:420px}
+    .disease-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.12)}
+    .disease-header{padding:16px 20px;background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;cursor:pointer}
+    .disease-title{font-size:16px;font-weight:600;margin-bottom:4px}
+    .disease-meta{font-size:12px;opacity:.9}
+    .disease-body{padding:20px;transition:max-height .3s ease;overflow:visible}
+    .disease-body.collapsed{max-height:0;overflow:hidden}
+    .disease-metrics{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:16px}
+    .metric-group h4{font-size:14px;color:#64748b;margin-bottom:8px;font-weight:500}
+    .metric-item{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9}
+    .metric-value{font-weight:600}
+    .trend{font-size:12px;padding:2px 6px;border-radius:4px;font-weight:500}
+    .trend-up{background:#fee2e2;color:#dc2626}
+    .trend-down{background:#dcfce7;color:#16a34a}
+    .trend-stable{background:#fef3c7;color:#d97706}
+    .disease-goals{background:#f8fafc;padding:12px;border-radius:6px;margin:16px 0}
+    .goal-item{display:flex;align-items:center;gap:8px;padding:4px 0}
+    .goal-status{width:12px;height:12px;border-radius:50%}
+    .goal-achieved{background:#16a34a}.goal-warning{background:#f59e0b}.goal-missed{background:#ef4444}
+
+    /* SCREENING - SCROLL ORIZONTAL */
+    .screening-grid{display:flex;overflow-x:auto;gap:16px;padding:10px 0;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+    .screening-grid::-webkit-scrollbar{height:6px}
+    .screening-grid::-webkit-scrollbar-track{background:#f1f5f9;border-radius:3px}
+    .screening-grid::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
+    .screening-grid::-webkit-scrollbar-thumb:hover{background:#94a3b8}
+    .screening-item{padding:16px;border:2px solid #e2e8f0;border-radius:8px;text-align:center;transition:.2s;min-width:160px;max-width:180px;flex-shrink:0}
+    .screening-item:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.1)}
+    .screening-overdue{border-color:#ef4444;background:#fef2f2}
+    .screening-due{border-color:#f59e0b;background:#fffbeb}
+    .screening-ok{border-color:#16a34a;background:#f0fdf4}
+    .screening-title{font-weight:600;margin-bottom:8px;font-size:13px;line-height:1.3}
+    .screening-date{font-size:12px;color:#64748b;margin-bottom:4px}
+    .screening-status{font-size:12px;padding:4px 8px;border-radius:4px;font-weight:500}
+
+    /* AI SHORTCUTS */
+    .smart-shortcuts{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:16px}
+    .shortcut-btn{background:linear-gradient(135deg,#f8fafc,#e2e8f0);border:1px solid #cbd5e1;padding:10px;border-radius:8px;cursor:pointer;transition:.2s}
+    .shortcut-btn:hover{background:linear-gradient(135deg,#e2e8f0,#cbd5e1);transform:translateY(-1px)}
+    .shortcut-icon{font-size:16px;margin-bottom:4px}
+    .shortcut-title{font-weight:600;font-size:12px;margin-bottom:2px}
+    .shortcut-desc{font-size:10px;color:#64748b}
+    .smart-chat{height:350px;border:2px solid #e5e7eb;border-radius:12px;overflow-y:auto;padding:16px;background:#fafafa;margin-bottom:16px}
+    .message{margin-bottom:16px}
+    .user-message{background:#dbeafe;padding:10px 12px;border-radius:12px 12px 4px 12px;margin-left:20px;font-size:13px}
+    .ai-message{background:#f3f4f6;padding:10px 12px;border-radius:12px 12px 12px 4px;border-left:4px solid #8b5cf6;margin-right:20px;font-size:13px}
+    .ai-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+    .action-btn{background:#1e40af;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;transition:.2s}
+    .action-btn:hover{background:#1e3a8a}
+    .urgent-btn{background:#dc2626}
+    .warning-btn{background:#f59e0b}
+    .success-btn{background:#16a34a}
+    .ai-input-area{display:flex;gap:8px;align-items:center}
+    .ai-input{flex:1;padding:10px 12px;border:2px solid #e5e7eb;border-radius:8px;font-size:14px}
+    .ai-input:focus{border-color:#8b5cf6;outline:none}
+    .send-btn{background:#8b5cf6;color:#fff;border:none;padding:10px 16px;border-radius:8px;cursor:pointer;font-weight:600}
+
+    /* QUICK ORDERS - SCROLL ORIZONTAL */
+    .qo-grid{display:flex;overflow-x:auto;gap:12px;padding:10px 0;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+    .qo-grid::-webkit-scrollbar{height:6px}
+    .qo-grid::-webkit-scrollbar-track{background:#f1f5f9;border-radius:3px}
+    .qo-grid::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
+    .qo-grid::-webkit-scrollbar-thumb:hover{background:#94a3b8}
+    .qo-card{border:1px solid #e2e8f0;border-radius:10px;padding:12px;background:#f9fafb;min-width:200px;max-width:240px;flex-shrink:0}
+    .qo-title{font-weight:600;margin-bottom:6px;font-size:14px;line-height:1.3}
+    .qo-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+    .btn-sm{padding:6px 10px;border-radius:6px;font-size:12px}
+    .chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid #cbd5e1;background:#fff}
+
+    /* MEDICATIONS TABLE */
+    .table{width:100%;border-collapse:separate;border-spacing:0 8px}
+    .table thead th{font-size:12px;color:#64748b;text-align:left;padding:6px 8px}
+    .table tbody td{background:#f9fafb;padding:10px 8px;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb}
+
+    /* TIMELINE */
+    .timeline{position:relative}
+    .timeline::before{content:'';position:absolute;left:20px;top:0;bottom:0;width:2px;background:#e2e8f0}
+    .timeline-item{position:relative;padding-left:50px;margin-bottom:20px}
+    .timeline-marker{position:absolute;left:12px;top:4px;width:16px;height:16px;background:#3b82f6;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+    .timeline-content{background:#f8fafc;padding:12px 16px;border-radius:8px;border-left:3px solid #3b82f6}
+    .timeline-date{font-size:12px;color:#64748b;font-weight:500}
+    .timeline-title{font-weight:600;margin:4px 0}
+    .timeline-details{font-size:14px;color:#64748b}
+
+    /* TABS */
+    .tab-content{display:none}
+    .tab-content.active{display:block}
+    .timeline-content-section{display:none}
+    .timeline-content-section.active{display:block}
+
+    /* TOAST */
+    .toast{position:fixed;right:16px;bottom:16px;min-width:240px;background:#111827;color:#fff;padding:12px 14px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.25);opacity:0;transform:translateY(10px);transition:.25s;z-index:9999}
+    .toast.show{opacity:1;transform:translateY(0)}
+
+    /* GRID sections */
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+
+    /* RESPONSIVE */
+    @media (max-width:768px){
+      .container{padding:8px;max-width:100vw}
+      .patient-header{padding:16px;margin-bottom:12px}
+      .patient-info{grid-template-columns:1fr;gap:16px;text-align:center}
+      .patient-primary{flex-direction:column;align-items:center;text-align:center}
+      .patient-details h1{font-size:20px;margin-bottom:6px}
+      .patient-meta{flex-wrap:wrap;justify-content:center;gap:8px;font-size:12px}
+      .patient-actions{flex-direction:row;justify-content:center;flex-wrap:wrap}
+      .btn{font-size:12px;padding:6px 12px}
+      
+      /* Collapsible sections mobile */
+      .collapsible-header{padding:12px 16px}
+      .collapsible-title{font-size:14px}
+      .collapsible-content{padding:16px}
+      .collapse-icon{font-size:16px}
+      
+      .alerts-grid{grid-template-columns:1fr;gap:8px}
+      .alert-item{padding:10px;font-size:12px}
+      .diseases-grid{gap:12px;padding:8px 0}
+      .disease-card{min-width:300px;max-width:320px}
+      .disease-header{padding:12px 16px}
+      .disease-title{font-size:14px}
+      .disease-meta{font-size:11px}
+      .disease-body{padding:16px}
+      .disease-metrics{grid-template-columns:1fr;gap:12px}
+      .qo-grid{gap:10px;padding:8px 0}
+      .qo-card{min-width:180px;max-width:200px;padding:10px}
+      .qo-title{font-size:13px}
+      .screening-grid{gap:12px;padding:8px 0}
+      .screening-item{min-width:140px;max-width:160px;padding:12px 8px}
+      .screening-title{font-size:12px}
+      .screening-date,.screening-status{font-size:10px}
+      .smart-chat{height:250px!important;font-size:12px}
+      .smart-shortcuts{grid-template-columns:repeat(2,1fr);gap:8px}
+      .shortcut-btn{padding:8px;font-size:11px}
+      .grid-2{grid-template-columns:1fr}
+      button,.btn{min-height:44px;touch-action:manipulation}
+      .collapsible-section{margin-bottom:10px}
+    }
+
+    @media (max-width:480px){
+      .container{padding:6px}
+      .patient-header{padding:12px}
+      .patient-details h1{font-size:18px}
+      .patient-meta span{font-size:11px}
+      .collapsible-header{padding:10px 12px}
+      .collapsible-content{padding:12px}
+      .disease-card{min-width:280px;max-width:300px}
+      .qo-card{min-width:160px;max-width:180px}
+      .screening-item{min-width:120px;max-width:140px}
+      .smart-shortcuts{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- PATIENT HEADER - SIMPLIFIED -->
+  <div class="patient-header">
+    <div class="patient-info">
+      <div class="patient-primary">
+        <div class="patient-avatar">XY</div>
+        <div class="patient-details">
+          <h1>XULESCU YECULESCU</h1>
+          <div class="patient-meta">
+            <span>ID: 100000361</span>
+            <span>45 ani</span>
+            <span>Feminin</span>
+            <span>0722.xxx.xxx</span>
+            <span>Prima vizita: 15/03/2023</span>
+            <span>Ultima vizita: 07/11/2024</span>
+          </div>
+        </div>
+      </div>
+      <div class="patient-actions">
+        <a href="#" class="btn btn-white">Programare noua</a>
+        <a href="#" class="btn btn-white">Export raport</a>
+        <a href="#" class="btn btn-white">Contact pacient</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALERGII & ANTECEDENTE - COLLAPSIBLE -->
+  <div class="collapsible-section">
+    <div class="collapsible-header" data-target="alergii-antecedente">
+      <div class="collapsible-title">
+        <span>🩸</span><span>ALERGII & ANTECEDENTE</span>
+      </div>
+      <span class="collapse-icon">∆</span>
+    </div>
+    <div class="collapsible-content" id="alergii-antecedente">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px">
+        <div class="info-section">
+          <h4 style="margin-bottom:8px;font-size:14px;color:#1e40af">ALERGII & INTOLERANȚE</h4>
+          <div style="font-size:13px;line-height:1.4">
+            <div style="margin-bottom:4px"><strong>Medicamente:</strong> Penicilină (edem facial)</div>
+            <div style="margin-bottom:4px"><strong>Alimente:</strong> Fara alergii cunoscute</div>
+            <div><strong>Altele:</strong> Polen (rinita sezonieră)</div>
+          </div>
+        </div>
+        <div class="info-section">
+          <h4 style="margin-bottom:8px;font-size:14px;color:#1e40af">ANTECEDENTE PERSONALE</h4>
+          <div style="font-size:13px;line-height:1.4">
+            <div style="margin-bottom:4px">Apendicectomie (2005)</div>
+            <div style="margin-bottom:4px">Cezariană (2010, 2013)</div>
+            <div style="margin-bottom:4px">Fractura radius (2018)</div>
+            <div>Fără alte intervenții majore</div>
+          </div>
+        </div>
+        <div class="info-section">
+          <h4 style="margin-bottom:8px;font-size:14px;color:#1e40af">ANTECEDENTE FAMILIALE</h4>
+          <div style="font-size:13px;line-height:1.4">
+            <div style="margin-bottom:4px"><strong>Mamă:</strong> Diabet tip 2, HTA</div>
+            <div style="margin-bottom:4px"><strong>Tată:</strong> Infarct (65 ani)</div>
+            <div style="margin-bottom:4px"><strong>Soră:</strong> Tiroidită Hashimoto</div>
+            <div><strong>Bunici:</strong> Cancer mamar (bunica maternă)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FACTORI SOCIALI - COLLAPSIBLE -->
+  <div class="collapsible-section">
+    <div class="collapsible-header" data-target="factori-sociali">
+      <div class="collapsible-title">
+        <span>🚭</span><span>FACTORI SOCIALI & LIFESTYLE</span>
+      </div>
+      <span class="collapse-icon">∆</span>
+    </div>
+    <div class="collapsible-content" id="factori-sociali">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px">
+        <div style="text-align:center;padding:12px;background:#f8fafc;border-radius:8px">
+          <div style="font-size:12px;color:#64748b;margin-bottom:4px">FUMAT</div>
+          <div style="font-size:14px;font-weight:600;color:#16a34a">Nu</div>
+          <div style="font-size:11px;color:#64748b">(Ex-fumatoare: 2015)</div>
+        </div>
+        <div style="text-align:center;padding:12px;background:#f8fafc;border-radius:8px">
+          <div style="font-size:12px;color:#64748b;margin-bottom:4px">ALCOOL</div>
+          <div style="font-size:14px;font-weight:600;color:#f59e0b">Ocazional</div>
+          <div style="font-size:11px;color:#64748b">(1-2 pahare/săptămână)</div>
+        </div>
+        <div style="text-align:center;padding:12px;background:#f8fafc;border-radius:8px">
+          <div style="font-size:12px;color:#64748b;margin-bottom:4px">EXERCIȚII</div>
+          <div style="font-size:14px;font-weight:600;color:#10b981">Moderat</div>
+          <div style="font-size:11px;color:#64748b">(Walking 3x/săptămână)</div>
+        </div>
+        <div style="text-align:center;padding:12px;background:#f8fafc;border-radius:8px">
+          <div style="font-size:12px;color:#64748b;margin-bottom:4px">OCUPAȚIE</div>
+          <div style="font-size:14px;font-weight:600;color:#6366f1">Contabil</div>
+          <div style="font-size:11px;color:#64748b">(Sedentar, stress moderat)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CRITICAL ALERTS - COLLAPSIBLE -->
+  <div class="collapsible-section">
+    <div class="collapsible-header" data-target="alerte-critice">
+      <div class="collapsible-title">
+        <span>🚨</span><span>ALERTE CRITICE - Acțiune Necesară</span>
+      </div>
+      <span class="collapse-icon">∆</span>
+    </div>
+    <div class="collapsible-content" id="alerte-critice">
+      <div style="background:#fee2e2;border-left:4px solid #ef4444;padding:16px 20px;border-radius:8px">
+        <div class="alerts-grid">
+          <div class="alert-item">
+            <strong>Screening depășit:</strong> Mamografie depășită cu 45 de zile
+            <div style="margin-top:8px">
+              <button class="btn" style="background:#dc2626;color:#fff;font-size:12px">Programează acum</button>
+            </div>
+          </div>
+          <div class="alert-item">
+            <strong>Valori anormale:</strong> HbA1c 7.2% (↗️ vs 6.8% anterior)
+            <div style="margin-top:8px">
+              <button class="btn" style="background:#dc2626;color:#fff;font-size:12px">Ajustează tratament</button>
+            </div>
+          </div>
+          <div class="alert-item">
+            <strong>Follow-up:</strong> Control diabet în 2 săptămâni
+            <div style="margin-top:8px">
+              <button class="btn" style="background:#f59e0b;color:#fff;font-size:12px">Vezi detalii</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DISEASES - COLLAPSIBLE -->
+  <div class="collapsible-section">
+    <div class="collapsible-header" data-target="probleme-medicale">
+      <div class="collapsible-title">
+        <span>🏥</span><span>PROBLEME MEDICALE ACTIVE</span>
+      </div>
+      <span class="collapse-icon">∆</span>
+    </div>
+    <div class="collapsible-content" id="probleme-medicale">
+      <div class="diseases-grid">
+        <!-- DIABETES -->
+        <div class="disease-card">
+          <div class="disease-header">
+            <div class="disease-title">🩺 DIABET ZAHARAT TIP 2</div>
+            <div class="disease-meta">Diagnosticat: 15/03/2023 | Control: 10/11/2024</div>
+          </div>
+          <div class="disease-body">
+            <div class="disease-metrics">
+              <div class="metric-group">
+                <h4>📊 Monitorizare</h4>
+                <div class="metric-item"><span>HbA1c:</span><span class="metric-value">7.2% <span class="trend trend-up">↗️</span></span></div>
+                <div class="metric-item"><span>Glicemie:</span><span class="metric-value">145 mg/dl <span class="trend trend-up">↗️</span></span></div>
+                <div class="metric-item"><span>TA:</span><span class="metric-value">140/85 <span class="trend trend-up">↗️</span></span></div>
+              </div>
+              <div class="metric-group">
+                <h4>💊 Tratament</h4>
+                <div class="metric-item"><span>Metformină:</span><span class="metric-value">500mg 2x/zi</span></div>
+                <div class="metric-item"><span>Dietă:</span><span class="metric-value">1800 kcal</span></div>
+                <div class="metric-item"><span>Exerciții:</span><span class="metric-value">30 min/zi</span></div>
+              </div>
+            </div>
+            <div class="disease-goals">
+              <strong>🎯 Obiective Terapeutice:</strong>
+              <div class="goal-item"><span class="goal-status goal-missed"></span><span>HbA1c < 7.0% (actual: 7.2%)</span></div>
+              <div class="goal-item"><span class="goal-status goal-missed"></span><span>Glicemie < 130 mg/dl (actual: 145)</span></div>
+              <div class="goal-item"><span class="goal-status goal-warning"></span><span>TA < 130/80 (actual: 140/85)</span></div>
+            </div>
+            <div style="background:#fff3cd;padding:8px;border-radius:4px;font-size:12px">
+              <strong>⚠️ Screening Necesar:</strong><br>
+              • Fond de ochi: 15/12/2024<br>
+              • EKG: depășit cu 30 zile<br>
+              • Microalbuminurie: în termen
+            </div>
+          </div>
+        </div>
+
+        <!-- THYROID -->
+        <div class="disease-card">
+          <div class="disease-header">
+            <div class="disease-title">🦋 TIROIDITĂ AUTOIMUNĂ</div>
+            <div class="disease-meta">Diagnosticată: 25/01/2024 | Control: 07/11/2024</div>
+          </div>
+          <div class="disease-body">
+            <div class="disease-metrics">
+              <div class="metric-group">
+                <h4>📊 Hormoni</h4>
+                <div class="metric-item"><span>TSH:</span><span class="metric-value">0.8 mUI/L <span class="trend trend-stable">→</span></span></div>
+                <div class="metric-item"><span>FT4:</span><span class="metric-value">1.2 ng/dl <span class="trend trend-stable">→</span></span></div>
+                <div class="metric-item"><span>Anti-TPO:</span><span class="metric-value">150 <span class="trend trend-up">↗️</span></span></div>
+              </div>
+              <div class="metric-group">
+                <h4>💊 Tratament</h4>
+                <div class="metric-item"><span>Levotiroxină:</span><span class="metric-value">50μg</span></div>
+                <div class="metric-item"><span>Frecvență:</span><span class="metric-value">1x dimineața</span></div>
+                <div class="metric-item"><span>Compliance:</span><span class="metric-value">Bună</span></div>
+              </div>
+            </div>
+            <div class="disease-goals">
+              <strong>🎯 Obiective:</strong>
+              <div class="goal-item"><span class="goal-status goal-achieved"></span><span>TSH: 0.5-2.5 mUI/L (actual: 0.8)</span></div>
+              <div class="goal-item"><span class="goal-status goal-achieved"></span><span>Simptome controlate</span></div>
+              <div class="goal-item"><span class="goal-status goal-achieved"></span><span>Dozaj stabil</span></div>
+            </div>
+            <div style="background:#d4edda;padding:8px;border-radius:4px;font-size:12px">
+              <strong>📅 Programare:</strong><br>
+              • Control hormoni: februarie 2025<br>
+              • Ecografie: august 2025<br>
+              • Anti-TPO: noiembrie 2025
+            </div>
+          </div>
+        </div>
+
+        <!-- GASTRITIS -->
+        <div class="disease-card">
+          <div class="disease-header">
+            <div class="disease-title">🫄 GASTRITĂ SUPERFICIALĂ</div>
+            <div class="disease-meta">Diagnosticată: 01/09/2024 | Endoscopie: 01/09/2024</div>
+          </div>
+          <div class="disease-body">
+            <div class="disease-metrics">
+              <div class="metric-group">
+                <h4>📊 Status</h4>
+                <div class="metric-item"><span>H. pylori:</span><span class="metric-value">Negativ ✅</span></div>
+                <div class="metric-item"><span>Inflamație:</span><span class="metric-value">Ușoară</span></div>
+                <div class="metric-item"><span>Simptome:</span><span class="metric-value">Controlate</span></div>
+              </div>
+              <div class="metric-group">
+                <h4>💊 Tratament</h4>
+                <div class="metric-item"><span>IPP:</span><span class="metric-value">20mg/zi</span></div>
+                <div class="metric-item"><span>Probiotice:</span><span class="metric-value">Da</span></div>
+                <div class="metric-item"><span>Dietă:</span><span class="metric-value">Respectată</span></div>
+              </div>
+            </div>
+            <div class="disease-goals">
+              <strong>🎯 Obiective:</strong>
+              <div class="goal-item"><span class="goal-status goal-achieved"></span><span>Simptome sub control</span></div>
+              <div class="goal-item"><span class="goal-status goal-achieved"></span><span>Dietă respectată</span></div>
+              <div class="goal-item"><span class="goal-status goal-warning"></span><span>Reducere medicație</span></div>
+            </div>
+            <div style="background:#cce5ff;padding:8px;border-radius:4px;font-size:12px">
+              <strong>📅 Follow-up:</strong><br>
+              • Evaluare simptome: martie 2025<br>
+              • Endoscopie control: septembrie 2026<br>
+              • Reducere IPP: la evaluare
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SMART AI - COLLAPSIBLE -->
+  <div class="collapsible-section">
+    <div class="collapsible-header" data-target="ai-asistent">
+      <div class="collapsible-title">
+        <span>🤖</span><span>Asistent Medical AI</span>
+        <span style="background:#f0fdf4;color:#16a34a;padding:4px 12px;border-radius:20px;font-size:12px;margin-left:auto;margin-right:10px">AI Activ</span>
+      </div>
+      <span class="collapse-icon">∆</span>
+    </div>
+    <div class="collapsible-content" id="ai-asistent">
+      <div class="smart-shortcuts">
+        <div class="shortcut-btn" data-query="analiza-completa">
+          <div class="shortcut-icon">📊</div>
+          <div class="shortcut-title">Analiză Completă</div>
+          <div class="shortcut-desc">Status + recomandări</div>
+        </div>
+        <div class="shortcut-btn" data-query="screening-lipsesc">
+          <div class="shortcut-icon">🔍</div>
+          <div class="shortcut-title">Screening Lipsă</div>
+          <div class="shortcut-desc">Investigații urgente</div>
+        </div>
+        <div class="shortcut-btn" data-query="optimizeaza-tratament">
+          <div class="shortcut-icon">💊</div>
+          <div class="shortcut-title">Optimizează Tratament</div>
+          <div class="shortcut-desc">Ajustări medicație</div>
+        </div>
+        <div class="shortcut-btn" data-query="actiuni-urgente">
+          <div class="shortcut-icon">⚡</div>
+          <div class="shortcut-title">Acțiuni Urgente</div>
+          <div class="shortcut-desc">Ce trebuie făcut azi</div>
+        </div>
+        <div class="shortcut-btn" data-query="sumar-medic-familie">
+          <div class="shortcut-icon">📞</div>
+          <div class="shortcut-title">Sumar pentru MF</div>
+          <div class="shortcut-desc">Comunicare către MF</div>
+        </div>
+        <div class="shortcut-btn" data-query="pacient-educatie">
+          <div class="shortcut-icon">📚</div>
+          <div class="shortcut-title">Educație Pacient</div>
+          <div class="shortcut-desc">Materiale + instrucțiuni</div>
+        </div>
+      </div>
+
+      <div class="smart-chat" id="smart-chat">
+        <div class="message">
+          <div class="ai-message">
+            <strong>AI Medical:</strong> Salut! Am analizat dosarul Irinei. Sunt gata să te ajut cu analiză completă, recomandări de tratament, screening-uri lipsă, sau orice altă întrebare medicală.
+            <br><br>
+            <strong>Status rapid:</strong> Am identificat 2 probleme urgente și 3 optimizări de tratament. Folosește butoanele de mai sus pentru analiza detaliată.
+          </div>
+        </div>
+      </div>
+
+      <div class="ai-input-area">
+        <input type="text" class="ai-input" id="ai-input" placeholder="Întreabă ceva specific despre acest pacient..."/>
+        <button class="send-btn" id="send-btn">Trimite</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONSULTATION - COLLAPSIBLE -->
+  <div class="collapsible-section">
+    <div class="collapsible-header" data-target="consultatia-actuala">
+      <div class="collapsible-title">
+        <span>📝</span><span>CONSULTAȚIA ACTUALĂ - 28/11/2024</span>
+      </div>
+      <span class="collapse-icon">∆</span>
+    </div>
+    <div class="collapsible-content" id="consultatia-actuala">
+      <div style="margin-bottom:16px">
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <button id="btn-preia-istoric" style="background:#10b981;color:#fff;border:none;padding:6px 12px;border-radius:4px;font-size:12px;cursor:pointer">📋 Preia din istoric</button>
+          <button style="background:#6366f1;color:#fff;border:none;padding:6px 12px;border-radius:4px;font-size:12px;cursor:pointer">🤖 Sugerează AI</button>
+          <button style="background:#f59e0b;color:#fff;border:none;padding:6px 12px;border-radius:4px;font-size:12px;cursor:pointer">📄 Template</button>
+        </div>
+      </div>
+
+      <div class="consultation-tabs" style="display:flex;border-bottom:2px solid #e5e7eb;margin-bottom:12px">
+        <button class="tab-btn active" data-tab="anamneza" style="padding:8px 16px;background:#10b981;color:#fff;border:none;border-radius:6px 6px 0 0;cursor:pointer;margin-right:2px">Anamneza</button>
+        <button class="tab-btn" data-tab="clinic" style="padding:8px 16px;background:#f3f4f6;border:none;cursor:pointer;margin-right:2px">Clinic</button>
+        <button class="tab-btn" data-tab="plan" style="padding:8px 16px;background:#f3f4f6;border:none;cursor:pointer">Plan</button>
+      </div>
+
+      <div class="tab-content active" id="anamneza">
+        <div style="background:#f0fdf4;padding:8px;border-radius:6px;margin-bottom:8px;font-size:12px">
+          <strong>🔍 Sugestii din istoric:</strong><br>
+          • Întreabă despre compliance Metformină<br>
+          • Verifică simptome gastrice (istoric gastrită)<br>
+          • Control greutate (important pentru diabet)
+        </div>
+        <textarea placeholder="Motivul consultației, simptome actuale..." style="width:100%;height:80px;padding:8px;border:1px solid #d1d5db;border-radius:6px;resize:vertical;font-size:14px"></textarea>
+      </div>
+
+      <div class="tab-content" id="clinic">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <input type="text" placeholder="TA: 140/85 (din istoric)" style="padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:12px"/>
+          <input type="text" placeholder="Puls:" style="padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:12px"/>
+          <input type="text" placeholder="Greutate:" style="padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:12px"/>
+          <input type="text" placeholder="BMI:" style="padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:12px"/>
+        </div>
+        <textarea placeholder="Examen clinic..." style="width:100%;height:60px;padding:8px;border:1px solid #d1d5db;border-radius:6px;resize:vertical;font-size:14px"></textarea>
+      </div>
+
+      <div class="tab-content" id="plan">
+        <div style="background:#fef3c7;padding:8px;border-radius:6px;margin-bottom:8px;font-size:12px">
+          <strong>🎯 Recomandări AI:</strong><br>
+          • Ajustează Metformină la 850mg 2x/zi<br>
+          • HbA1c control în 3 luni<br>
+          • Programează mamografie (depășită)
+        </div>
+        <textarea placeholder="Plan de tratament, investigații, recomandări..." style="width:100%;height:80px;padding:8px;border:1px solid #d1d5db;border-radius:6px;resize:vertical;font-size:14px"></textarea>
+      </div>
+
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button style="background:#10b981;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;flex:1">💾 Salvează consultația</button>
+        <button style="background:#3b82f6;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer">📄 Export PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREENING - COLLAPSIBLE -->
+  <div class="collapsible-section">
+    <div class="collapsible-header" data-target="status-screening">
+      <div class="collapsible-title">
+        <span>🔍</span><span>STATUS SCREENING PREVENTIV</span>
+      </div>
+      <span class="collapse-icon">∆</span>
+    </div>
+    <div class="collapsible-content" id="status-screening">
+      <div class="screening-grid">
+        <div class="screening-item screening-overdue">
+          <div class="screening-title">Mamografie</div>
+          <div class="screening-date">Ultima: 15/06/2023</div>
+          <div class="screening-status" style="background:#fee2e2;color:#dc2626">DEPĂȘIT - 45 zile</div>
+        </div>
+        <div class="screening-item screening-due">
+          <div class="screening-title">FIT Test</div>
+          <div class="screening-date">Ultima: 10/10/2024</div>
+          <div class="screening-status" style="background:#fffbeb;color:#f59e0b">Urmează în 14 zile</div>
+        </div>
+        <div class="screening-item screening-ok">
+          <div class="screening-title">Colonoscopie</div>
+          <div class="screening-date">Ultima: 15/03/2021</div>
+          <div class="screening-status" style="background:#f0fdf4;color:#16a34a">ÎN TERMEN - 3 ani</div>
+        </div>
+        <div class="screening-item screening-due">
+          <div class="screening-title">Papanicolau</div>
+          <div class="screening-date">Ultima: 20/08/2024</div>
+          <div class="screening-status" style="background:#f0fdf4;color:#16a34a">ÎN TERMEN - 2.5 ani</div>
+        </div>
+        <div class="screening-item screening-due">
+          <div class="screening-title">Oftalmologic</div>
+          <div class="screening-date">Ultima: 12/11/2022</div>
+          <div class="screening-status" style="background:#fffbeb;color:#f59e0b">Urmează în 30 zile</div>
+        </div>
+        <div class="screening-item screening-ok">
+          <div class="screening-title">Dermatologic</div>
+          <div class="screening-date">Ultima: 05/07/2024</div>
+          <div class="screening-status" style="background:#f0fdf4;color:#16a34a">ÎN TERMEN - 8 luni</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUICK ORDERS - COLLAPSIBLE -->
+  <div class="collapsible-section">
+    <div class="collapsible-header" data-target="quick-orders-content">
+      <div class="collapsible-title">
+        <span>⚡</span><span>QUICK-ORDERS</span>
+      </div>
+      <span class="collapse-icon">∆</span>
+    </div>
+    <div class="collapsible-content" id="quick-orders-content">
+      <div style="display:grid;grid-template-columns:1fr max-content;gap:10px;margin-bottom:12px">
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="qo-search" type="text" placeholder="Caută (min 3 litere)… ex: mam, hba, ochi"
+                 style="flex:1;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;font-size:14px">
+          <button id="qo-clear" class="btn btn-sm" style="background:#f3f4f6">Șterge</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <label for="qo-speed" style="font-size:12px;color:#64748b">Viteză</label>
+          <select id="qo-speed" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:10px">
+            <option value="500">Lent</option>
+            <option value="300" selected>Mediu</option>
+            <option value="150">Rapid</option>
+          </select>
+        </div>
+      </div>
+      <div class="qo-grid">
+        <div class="qo-card">
+          <div class="qo-title">HbA1c</div>
+          <div class="chip">Ultima: 10/10/2024 – 7.2%</div>
+          <div class="qo-actions">
+            <button class="btn btn-sm" style="background:#3b82f6;color:#fff" data-qo="hbA1c">Comandă HbA1c</button>
+            <button class="btn btn-sm" style="background:#f3f4f6" data-qo-snooze="hbA1c">Snooze 30 zile</button>
+          </div>
+        </div>
+        <div class="qo-card">
+          <div class="qo-title">UACR / Microalbuminurie</div>
+          <div class="chip">Status: în termen</div>
+          <div class="qo-actions">
+            <button class="btn btn-sm" style="background:#3b82f6;color:#fff" data-qo="uacr">Comandă UACR</button>
+          </div>
+        </div>
+        <div class="qo-card">
+          <div class="qo-title">Mamografie</div>
+          <div class="chip" style="border-color:#ef4444;color:#ef4444">Depășit</div>
+          <div class="qo-actions">
+            <button class="btn btn-sm" style="background:#dc2626;color:#fff" data-qo="mamografie">Programează</button>
+          </div>
+        </div>
+        <div class="qo-card">
+          <div class="qo-title">Fond de ochi</div>
+          <div class="chip">Scadent: 15/12/2024</div>
+          <div class="qo-actions">
+            <button class="btn btn-sm" style="background:#3b82f6;color:#fff" data-qo="fund-ochi">Trimite trimitere</button>
+          </div>
+        </div>
+        <div class="qo-card">
+          <div class="qo-title">Nutriție</div>
+          <div class="chip">Diabet tip 2</div>
+          <div class="qo-actions">
+            <button class="btn btn-sm" style="background:#10b981;color:#fff" data-qo="nutritie">Programare Nutriționist</button>
+          </div>
+        </div>
+        <div class="qo-card">
+          <div class="qo-title">Rețetă Metformină</div>
+          <div class="chip">500 mg • 2x/zi</div>
+          <div class="qo-actions">
+            <button class="btn btn-sm" style="background:#6366f1;color:#fff" data-qo="metformina">Generează rețetă</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MEDICATION + LOG - COLLAPSIBLE -->
+  <div class="grid-2">
+    <div class="collapsible-section">
+      <div class="collapsible-header" data-target="medicatie-curenta">
+        <div class="collapsible-title">
+          <span>💊</span><span>MEDICAȚIE CURENTĂ</span>
+        </div>
+        <span class="collapse-icon">∆</span>
+      </div>
+      <div class="collapsible-content" id="medicatie-curenta">
+        <table class="table">
+          <thead>
+            <tr><th>Medicament</th><th>Doză</th><th>Frecvență</th><th>Indicație</th><th>Acțiuni</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Metformină</td><td>500 mg</td><td>2x/zi</td><td>Diabet tip 2</td>
+              <td>
+                <button class="btn btn-sm" style="background:#6366f1;color:#fff" data-qo="metformina">Reînnoiește</button>
+                <button class="btn btn-sm" style="background:#f3f4f6" data-med-stop="metformina">Oprește</button>
+              </td>
+            </tr>
+            <tr>
+              <td>Levotiroxină</td><td>50 μg</td><td>1x dimineața</td><td>Tiroidită autoimună</td>
+              <td>
+                <button class="btn btn-sm" style="background:#6366f1;color:#fff" data-qo="levotiroxina">Reînnoiește</button>
+                <button class="btn btn-sm" style="background:#f3f4f6" data-med-stop="levotiroxina">Oprește</button>
+              </td>
+            </tr>
+            <tr>
+              <td>IPP</td><td>20 mg</td><td>1x/zi</td><td>Gastrită</td>
+              <td>
+                <button class="btn btn-sm" style="background:#6366f1;color:#fff" data-qo="ipp">Reînnoiește</button>
+                <button class="btn btn-sm" style="background:#f59e0b;color:#fff" data-med-taper="ipp">Deprescriere</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="margin-top:8px;font-size:12px;color:#64748b">⚠️ Interacțiuni potențiale: IPP ↓ absorbție Levotiroxină (administrați la distanță 4h)</div>
+        <div class="qo-actions" style="margin-top:10px">
+          <button class="btn btn-sm" style="background:#10b981;color:#fff" id="btn-genereaza-reteta">Generează rețetă combinată</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="collapsible-section">
+      <div class="collapsible-header" data-target="jurnal-activitati">
+        <div class="collapsible-title">
+          <span>🗂️</span><span>JURNAL ACTIVITĂȚI</span>
+        </div>
+        <span class="collapse-icon">∆</span>
+      </div>
+      <div class="collapsible-content" id="jurnal-activitati">
+        <div id="log-box" style="height:220px;overflow:auto;border:1px solid #e5e7eb;border-radius:8px;padding:10px;background:#fafafa;margin-bottom:16px">
+          <div style="font-size:12px;color:#64748b">— fără evenimente recente —</div>
+        </div>
+        <div style="font-size:12px;color:#64748b">Acțiunile (quick-orders, mesaje, fișe) apar aici.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MEDIC DE FAMILIE - COLLAPSIBLE -->
+  <div class="collapsible-section">
+    <div class="collapsible-header" data-target="medic-familie">
+      <div class="collapsible-title">
+        <span>👨‍⚕️</span><span>MEDIC DE FAMILIE & COMUNICARE</span>
+      </div>
+      <span class="collapse-icon">∆</span>
+    </div>
+    <div class="collapsible-content" id="medic-familie">
+      <div style="display:grid;grid-template-columns:1fr;gap:10px">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:10px">
+          <div style="font-weight:600">Dr. Ionescu Andrei</div>
+          <div style="font-size:13px;color:#64748b">Medic de familie • Clinica SISEB</div>
+          <div style="font-size:13px;color:#64748b;margin-top:6px">📞 0722.111.222 • ✉️ dr.ionescu@example.ro</div>
+          <div class="qo-actions">
+            <button class="btn btn-sm" style="background:#10b981;color:#fff" id="btn-suna-mf">Sună</button>
+            <button class="btn btn-sm" style="background:#3b82f6;color:#fff" id="btn-mesaj-mf">Trimite mesaj</button>
+            <button class="btn btn-sm" style="background:#6366f1;color:#fff" id="btn-trimite-sumar-mf">Trimite sumar</button>
+          </div>
+        </div>
+
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:10px">
+          <div style="font-weight:600;margin-bottom:6px">Preferințe comunicare pacient</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <label for="sel-channel" style="font-size:12px;color:#64748b">Canal preferat</label>
+              <select id="sel-channel" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:8px">
+                <option>SMS</option>
+                <option>Telefon</option>
+                <option>Email</option>
+                <option>Portal pacient</option>
+              </select>
+            </div>
+            <div>
+              <label for="sel-lang" style="font-size:12px;color:#64748b">Limba preferată</label>
+              <select id="sel-lang" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:8px">
+                <option>Română</option>
+                <option>Engleză</option>
+                <option>Maghiară</option>
+              </select>
+            </div>
+          </div>
+          <div class="qo-actions" style="margin-top:8px">
+            <button class="btn btn-sm" id="btn-save-prefs" style="background:#1e40af;color:#fff">Salvează preferințele</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ISTORIC MEDICAL - COLLAPSIBLE -->
+  <div class="collapsible-section">
+    <div class="collapsible-header" data-target="istoric-medical">
+      <div class="collapsible-title">
+        <span>📋</span><span>ISTORIC MEDICAL COMPLET</span>
+      </div>
+      <span class="collapse-icon">∆</span>
+    </div>
+    <div class="collapsible-content" id="istoric-medical">
+      <div class="timeline-tabs" style="display:flex;margin-bottom:16px;border-bottom:2px solid #e5e7eb">
+        <button class="timeline-tab active" data-timeline="recent" style="padding:8px 16px;background:#1e40af;color:#fff;border:none;border-radius:6px 6px 0 0;cursor:pointer;margin-right:2px">Ultimele 6 luni</button>
+        <button class="timeline-tab" data-timeline="hospitalizations" style="padding:8px 16px;background:#f3f4f6;border:none;cursor:pointer;margin-right:2px">Spitalizări</button>
+        <button class="timeline-tab" data-timeline="immunizations" style="padding:8px 16px;background:#f3f4f6;border:none;cursor:pointer;margin-right:2px">Imunizări</button>
+        <button class="timeline-tab" data-timeline="procedures" style="padding:8px 16px;background:#f3f4f6;border:none;cursor:pointer">Proceduri</button>
+      </div>
+
+      <!-- recent -->
+      <div class="timeline-content-section active" id="recent">
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-marker"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">07/11/2024</div>
+              <div class="timeline-title">Consult Endocrinologie</div>
+              <div class="timeline-details">Control tiroidită autoimună - TSH în limite normale, menținere tratament</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-marker"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">10/10/2024</div>
+              <div class="timeline-title">Analize Laborator</div>
+              <div class="timeline-details">HbA1c 7.2% (vs 6.8%), Glicemie 145 mg/dl - ajustare necesară tratament diabet</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-marker"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">01/09/2024</div>
+              <div class="timeline-title">Endoscopie Digestivă</div>
+              <div class="timeline-details">Gastrită superficială cronică, H. pylori negativ - inițiat tratament cu IPP</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-marker"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">05/07/2024</div>
+              <div class="timeline-title">Consult Dermatologic</div>
+              <div class="timeline-details">Screening dermatologic - fără leziuni suspecte, control în 12 luni</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- hospitalizations -->
+      <div class="timeline-content-section" id="hospitalizations">
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-marker" style="background:#dc2626"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">15-18/03/2023</div>
+              <div class="timeline-title">Spitalizare Endocrinologie</div>
+              <div class="timeline-details">Debut diabet zaharat tip 2 - educație, inițiere tratament, 3 zile</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-marker" style="background:#dc2626"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">22/06/2018</div>
+              <div class="timeline-title">Urgențe Traumatologie</div>
+              <div class="timeline-details">Fractură radius drept - osteosinteză, 1 zi</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-marker" style="background:#dc2626"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">10/04/2013</div>
+              <div class="timeline-title">Obstetrică-Ginecologie</div>
+              <div class="timeline-details">Cezariană planificată - al doilea copil, 4 zile</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-marker" style="background:#dc2626"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">15/08/2010</div>
+              <div class="timeline-title">Obstetrică-Ginecologie</div>
+              <div class="timeline-details">Cezariană urgentă - primul copil, 5 zile</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-marker" style="background:#dc2626"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">08/07/2005</div>
+              <div class="timeline-title">Chirurgie Generală</div>
+              <div class="timeline-details">Apendicectomie laparoscopică, 2 zile</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- immunizations -->
+      <div class="timeline-content-section" id="immunizations">
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-marker" style="background:#16a34a"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">15/10/2024</div>
+              <div class="timeline-title">Vaccin Gripal Sezonier</div>
+              <div class="timeline-details">Influvac Tetra - doză anuală, fără reacții adverse</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-marker" style="background:#16a34a"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">05/09/2024</div>
+              <div class="timeline-title">Rapel dTaP</div>
+              <div class="timeline-details">Boostrix - rapel la 10 ani, următorul în 2034</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-marker" style="background:#16a34a"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">20/03/2022</div>
+              <div class="timeline-title">COVID-19 Booster</div>
+              <div class="timeline-details">Pfizer-BioNTech - doza 4, schemă completă</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-marker" style="background:#f59e0b"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">LIPSĂ</div>
+              <div class="timeline-title">Vaccin Pneumococic</div>
+              <div class="timeline-details">Recomandat pentru diabet - programare necesară</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-marker" style="background:#f59e0b"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">LIPSĂ</div>
+              <div class="timeline-title">Vaccin Hepatită B</div>
+              <div class="timeline-details">Status necunoscut - verificare titruri necesară</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- procedures -->
+      <div class="timeline-content-section" id="procedures">
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-marker" style="background:#7c3aed"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">01/09/2024</div>
+              <div class="timeline-title">Endoscopie Digestivă Superioară</div>
+              <div class="timeline-details">Gastroscopie - gastrită superficială, biopsie negative</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-marker" style="background:#7c3aed"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">15/06/2023</div>
+              <div class="timeline-title">Mamografie Bilaterală</div>
+              <div class="timeline-details">Screening - BI-RADS 1, normală (DEPĂȘIT - reprogramare urgent)</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-marker" style="background:#7c3aed"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">15/03/2021</div>
+              <div class="timeline-title">Colonoscopie de Screening</div>
+              <div class="timeline-details">Normală - următoarea programată pentru 2031</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-marker" style="background:#7c3aed"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">20/08/2024</div>
+              <div class="timeline-title">Papanicolau + HPV</div>
+              <div class="timeline-details">Normal - următorul în august 2027</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMAR ULTIMA VIZITĂ - COLLAPSIBLE -->
+  <div class="collapsible-section">
+    <div class="collapsible-header" data-target="sumar-ultima-vizita">
+      <div class="collapsible-title">
+        <span>📄</span><span>SUMAR ULTIMA VIZITĂ</span>
+      </div>
+      <span class="collapse-icon">∆</span>
+    </div>
+    <div class="collapsible-content" id="sumar-ultima-vizita">
+      <div style="font-size:12px;color:#64748b;font-weight:normal;margin-bottom:16px">07/11/2024 - Dr. Popescu Maria</div>
+      <div class="visit-summary-content">
+        <div class="summary-section" style="margin-bottom:16px">
+          <h4 style="font-size:13px;color:#374151;margin-bottom:6px;font-weight:600">MOTIVUL CONSULTAȚIEI</h4>
+          <p style="font-size:12px;color:#6b7280;line-height:1.4">Control programat tiroidită autoimună și diabet zaharat tip 2.</p>
+        </div>
+        <div class="summary-section" style="margin-bottom:16px">
+          <h4 style="font-size:13px;color:#374151;margin-bottom:6px;font-weight:600">SIMPTOME ACTUALE</h4>
+          <p style="font-size:12px;color:#6b7280;line-height:1.4">Fără simptome tiroidiene. Sete ușor crescută, oboseală în ultimele 2 săptămâni.</p>
+        </div>
+        <div class="summary-section" style="margin-bottom:16px">
+          <h4 style="font-size:13px;color:#374151;margin-bottom:6px;font-weight:600">EXAMEN CLINIC</h4>
+          <div style="font-size:12px;color:#6b7280;line-height:1.4">
+            <div>• TA: 140/85 mmHg</div>
+            <div>• Puls: 78 bpm, regulat</div>
+            <div>• Greutate: 75 kg (BMI: 28.5)</div>
+            <div>• Tiroidă: palpabilă, omogenă</div>
+          </div>
+        </div>
+        <div class="summary-section" style="margin-bottom:16px">
+          <h4 style="font-size:13px;color:#374151;margin-bottom:6px;font-weight:600">REZULTATE LABORATOR</h4>
+          <div style="font-size:12px;color:#6b7280;line-height:1.4">
+            <div>• TSH: 0.8 mUI/L (normal)</div>
+            <div>• FT4: 1.2 ng/dl (normal)</div>
+            <div>• HbA1c: 7.2% (crescută vs 6.8%)</div>
+          </div>
+        </div>
+        <div class="summary-section" style="margin-bottom:16px">
+          <h4 style="font-size:13px;color:#374151;margin-bottom:6px;font-weight:600">PLAN TERAPEUTIC</h4>
+          <div style="font-size:12px;color:#6b7280;line-height:1.4">
+            <div>• Levotiroxină 50μg - menținere</div>
+            <div>• Metformină 500mg - discuție creștere doza</div>
+            <div>• Control HbA1c în 3 luni</div>
+            <div>• Consultație nutriționist</div>
+          </div>
+        </div>
+        <div class="summary-section">
+          <h4 style="font-size:13px;color:#dc2626;margin-bottom:6px;font-weight:600">ACȚIUNI URGENTE</h4>
+          <div style="font-size:12px;color:#dc2626;line-height:1.4">
+            <div>• Mamografie URGENT (depășită 4 luni)</div>
+            <div>• Reevaluare compliance Metformină</div>
+            <div>• Control TA săptămânal</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// SMART AI RESPONSES
+const aiResponses = {
+  'analiza-completa': {
+    text: `<strong>ANALIZĂ COMPLETĂ PACIENT - Irina Barca</strong><br><br>
+    
+    <strong>🚨 PROBLEME URGENTE (Acțiune în 48h):</strong><br>
+    • Mamografie depășită cu 45 zile - risc cancer mamar<br>
+    • HbA1c crescut la 7.2% (vs target < 7.0%) - diabet necontrolat<br><br>
+    
+    <strong>⚠️ ATENȚIE APROPIATĂ (7-14 zile):</strong><br>
+    • Fond de ochi scadent în 15 zile - screening diabet<br>
+    • FIT test scadent în 12 zile<br><br>
+    
+    <strong>💊 OPTIMIZĂRI TRATAMENT:</strong><br>
+    • Metformină: creștere la 850mg 2x/zi (compliance 80%)<br>
+    • Evaluare adăugare SGLT2 inhibitor<br>
+    • Consiliere nutrițională pentru diabet<br><br>
+    
+    <strong>✅ SUB CONTROL:</strong><br>
+    • Tiroidită: TSH optim (0.8), menține Levotiroxină<br>
+    • Gastrită: remisiune cu IPP, evaluare scădere doză<br>
+    • Colonoscopie, Papanicolau: în termen`,
+    actions: [
+      { text: 'Programează mamografie URGENT', type: 'urgent-btn', action: 'programeaza-mamografie' },
+      { text: 'Ajustează Metformină la 850mg', type: 'warning-btn', action: 'ajusteaza-metformina' },
+      { text: 'Trimite la fond ochi', type: 'warning-btn', action: 'trimite-fond-ochi' },
+      { text: 'Generează sumar pentru MF', type: 'action-btn', action: 'sumar-mf' }
+    ]
+  },
+  'screening-lipsesc': {
+    text: `<strong>SCREENING LIPSĂ - Prioritizare pe urgență</strong><br><br>
+    
+    <strong>🔴 DEPĂȘITE (Urgent):</strong><br>
+    • Mamografie: depășită cu 45 zile (ultima: 15/06/2023)<br>
+    &nbsp;&nbsp;→ Risc: cancer mamar nedepistat<br><br>
+    
+    <strong>🟡 APROAPE SCADENTE:</strong><br>
+    • Fond de ochi: 15 zile (pentru diabetici anual)<br>
+    • FIT test: 12 zile (screening colorectal)<br>
+    • Oftalmologic: 30 zile (pentru diabetici)<br><br>
+    
+    <strong>✅ ÎN TERMEN:</strong><br>
+    • Colonoscopie: încă 3 ani (2021 → 2031)<br>
+    • Papanicolau + HPV: încă 2.5 ani<br>
+    • Dermatologic: încă 8 luni<br><br>
+    
+    <strong>RECOMANDARE:</strong> Prioritatea 1 este mamografia în această săptămână!`,
+    actions: [
+      { text: 'Programează mamografie azi', type: 'urgent-btn', action: 'programeaza-mamografie' },
+      { text: 'Lista completă screening + programare', type: 'action-btn', action: 'programeaza-toate' },
+      { text: 'Notifică pacient SMS/email', type: 'action-btn', action: 'notifica-pacient' }
+    ]
+  }
+};
+
+document.addEventListener('DOMContentLoaded', function () {
+  window._toggleFromAttr = function(){ if (window.toggleHeader) window.toggleHeader(this); };
+  // COLLAPSIBLE SECTIONS FUNCTIONALITY
+  const collapsibleHeaders = document.querySelectorAll('.collapsible-header');
+  
+  function toggleHeader(header){
+    const target = header.dataset.target;
+    let content = target ? document.getElementById(target) : null;
+    if (!content){
+      const sib = header.nextElementSibling;
+      if (sib && sib.classList && sib.classList.contains('collapsible-content')) content = sib;
+    }
+    if (!content) {
+      console.warn('Collapsible target not found for header:', header);
+      return;
+    }
+    const isCollapsed = header.classList.contains('collapsed');
+    if (isCollapsed) {
+      // Expand
+      header.classList.remove('collapsed');
+      content.classList.remove('collapsed');
+      // animate open
+      content.style.maxHeight = content.scrollHeight + 'px';
+      setTimeout(() => {
+        if (!content.classList.contains('collapsed')) content.style.maxHeight = 'none';
+      }, 300);
+    } else {
+      // Collapse
+      // if currently 'none', set to current height first for a smooth close
+      if (getComputedStyle(content).maxHeight === 'none'){
+        content.style.maxHeight = content.scrollHeight + 'px';
+      }
+      // force reflow
+      void content.offsetHeight;
+      header.classList.add('collapsed');
+      content.classList.add('collapsed');
+      content.style.maxHeight = '0px';
+    }
+  }
+  window.toggleHeader = toggleHeader;
+
+
+  // dedup touch+click
+  let lastTouchTime = 0;
+  collapsibleHeaders.forEach(header => {
+    header.style.webkitTapHighlightColor = 'rgba(0,0,0,0)';
+    header.setAttribute('role','button');
+    header.setAttribute('tabindex','0');
+
+    function onClick(e){
+      if (e && e.cancelable) e.preventDefault();
+      // ignore clicks right after touchend (iOS)
+      if (Date.now() - lastTouchTime < 400) return;
+      toggleHeader(header);
+    }
+    function onTouchEnd(e){
+      lastTouchTime = Date.now();
+      toggleHeader(header);
+    }
+
+    header.addEventListener('click', onClick, { passive: false });
+    header.addEventListener('touchend', onTouchEnd, { passive: true });
+    header.addEventListener('keydown', function(e){
+      if (e.key==='Enter' || e.key===' ') { e.preventDefault(); toggleHeader(header); }
+    });
+    // Visual feedback on iOS for tap
+    header.addEventListener('touchstart', function(){
+      header.style.backgroundColor = 'rgba(203, 213, 225, 0.5)';
+    }, {passive:true});
+    header.addEventListener('touchend', function(){
+      header.style.backgroundColor = '';
+    }, {passive:true});
+  });
+  // Initialize some sections as collapsed on mobile
+// Also handle touch events for better mobile support
+    header.addEventListener('touchstart', function(e) {
+      this.style.backgroundColor = 'rgba(203, 213, 225, 0.5)';
+    });
+    
+    header.addEventListener('touchend', function(e) {
+      this.style.backgroundColor = '';
+    });
+  
+  // iOS inline fallback: set onclick to call global helper (works even if listeners are ignored)
+  (function(){
+    var iOS = /iP(hone|od|ad)/.test(navigator.platform) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (!iOS) return;
+    document.querySelectorAll('.collapsible-header').forEach(function(h){
+      if (!h.getAttribute('onclick')) h.setAttribute('onclick', 'window._toggleFromAttr.call(this)');
+    });
+  })();
+});
+
+  // Initialize some sections as collapsed on mobile
+  if (window.matchMedia('(max-width: 768px)').matches) {
+    const sectionsToCollapse = ['alergii-antecedente', 'factori-sociali', 'jurnal-activitati'];
+    sectionsToCollapse.forEach(sectionId => {
+      const header = document.querySelector(`[data-target="${sectionId}"]`);
+      const content = document.getElementById(sectionId);
+      if (header && content) {
+        header.classList.add('collapsed');
+        content.classList.add('collapsed');
+      }
+    });
+  }
+
+  // AI Smart functionality
+  const shortcuts = document.querySelectorAll('.shortcut-btn');
+  const aiInput = document.getElementById('ai-input');
+  const sendBtn = document.getElementById('send-btn');
+  const smartChat = document.getElementById('smart-chat');
+
+  shortcuts.forEach(btn => {
+    btn.addEventListener('click', function() {
+      const query = this.dataset.query;
+      handleAIQuery(query);
+    });
+  });
+
+  sendBtn.addEventListener('click', handleCustomQuery);
+  aiInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      handleCustomQuery();
+    }
+  });
+
+  function handleAIQuery(query) {
+    const response = aiResponses[query];
+    if (response) {
+      addMessageToChat('user', getQueryTitle(query));
+      setTimeout(() => {
+        addMessageToChat('ai', response.text, response.actions);
+      }, 800);
+    }
+  }
+
+  function handleCustomQuery() {
+    const query = aiInput.value.trim();
+    if (!query) return;
+
+    addMessageToChat('user', query);
+    aiInput.value = '';
+    
+    setTimeout(() => {
+      const response = generateCustomResponse(query);
+      addMessageToChat('ai', response);
+    }, 800);
+  }
+
+  function addMessageToChat(sender, text, actions = []) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message';
+    
+    if (sender === 'user') {
+      messageDiv.innerHTML = `<div class="user-message"><strong>Tu:</strong> ${text}</div>`;
+    } else {
+      let actionsHtml = '';
+      if (actions && actions.length > 0) {
+        actionsHtml = '<div class="ai-actions">';
+        actions.forEach(action => {
+          actionsHtml += `<button class="action-btn ${action.type}" data-action="${action.action}">${action.text}</button>`;
+        });
+        actionsHtml += '</div>';
+      }
+      messageDiv.innerHTML = `<div class="ai-message"><strong>AI Medical:</strong> ${text}${actionsHtml}</div>`;
+      
+      setTimeout(() => {
+        messageDiv.querySelectorAll('.action-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            handleAction(this.dataset.action, this.textContent);
+          });
+        });
+      }, 100);
+    }
+    
+    smartChat.appendChild(messageDiv);
+    smartChat.scrollTop = smartChat.scrollHeight;
+  }
+
+  function handleAction(action, buttonText) {
+    setTimeout(() => {
+      addMessageToChat('ai', `✅ <strong>Acțiune completă:</strong> ${buttonText}<br>Status: Executat cu succes la ${new Date().toLocaleTimeString()}`);
+    }, 500);
+  }
+
+  function generateCustomResponse(query) {
+    const lowerQuery = query.toLowerCase();
+    
+    if (lowerQuery.includes('diabet') || lowerQuery.includes('hba1c') || lowerQuery.includes('glicemie')) {
+      return `Analiza diabet pentru Irina:<br>• HbA1c actual: 7.2% (crescut vs 6.8%)<br>• Target: <7.0%<br>• Recomandare: creștere Metformină la 850mg<br>• Control în 6-8 săptămâni`;
+    } else if (lowerQuery.includes('screening') || lowerQuery.includes('mamograf')) {
+      return `Status screening:<br>• Mamografie: URGENTĂ (depășită 45 zile)<br>• Fond ochi: apropiat (15 zile)<br>• FIT test: apropiat (12 zile)<br>• Recomand prioritizare mamografie`;
+    } else if (lowerQuery.includes('medicatie') || lowerQuery.includes('tratament')) {
+      return `Medicația actuală:<br>• Metformină 500mg 2x/zi (compliance 80%)<br>• Levotiroxină 50μg 1x/zi (compliance 95%)<br>• IPP 20mg 1x/zi<br>• Recomand: ajustare Metformină pentru controlul diabetului`;
+    } else {
+      return `Am înțeles întrebarea. Pentru analize detaliate, folosește butoanele de shortcut sau întreabă specific despre:<br>• Status medical general<br>• Screening lipsă<br>• Optimizări tratament<br>• Acțiuni urgente<br>• Comunicare cu medicul de familie`;
+    }
+  }
+
+  function getQueryTitle(query) {
+    const titles = {
+      'analiza-completa': 'Analizează complet pacientul',
+      'screening-lipsesc': 'Ce screening-uri lipsesc?',
+      'optimizeaza-tratament': 'Optimizează tratamentul',
+      'actiuni-urgente': 'Ce acțiuni sunt urgente?',
+      'sumar-medic-familie': 'Generează sumar pentru medicul de familie',
+      'pacient-educatie': 'Materiale educație pentru pacient'
+    };
+    return titles[query] || query;
+  }
+
+  /* ===== Tabs: Consultation ===== */
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabContents = document.querySelectorAll('.tab-content');
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', function(){
+      const target = this.dataset.tab;
+      tabBtns.forEach(tb => { 
+        tb.classList.remove('active'); 
+        tb.style.background='#f3f4f6'; 
+        tb.style.color='#374151'; 
+      });
+      this.classList.add('active'); 
+      this.style.background='#10b981'; 
+      this.style.color='#fff';
+      
+      tabContents.forEach(c => c.classList.remove('active'));
+      const tgt = document.getElementById(target); 
+      if (tgt) tgt.classList.add('active');
+    });
+  });
+
+  /* ===== Tabs: Timeline ===== */
+  const timelineTabs = document.querySelectorAll('.timeline-tab');
+  const timelineContents = document.querySelectorAll('.timeline-content-section');
+  timelineTabs.forEach(tab => {
+    tab.addEventListener('click', function(){
+      const target = this.dataset.timeline;
+      timelineTabs.forEach(tb => {
+        tb.classList.remove('active'); 
+        tb.style.background='#f3f4f6'; 
+        tb.style.color='#374151';
+      });
+      this.classList.add('active'); 
+      this.style.background='#1e40af'; 
+      this.style.color='#fff';
+      
+      timelineContents.forEach(c => c.classList.remove('active'));
+      const tgt = document.getElementById(target); 
+      if (tgt) tgt.classList.add('active');
+    });
+  });
+
+  const toast = document.getElementById('toast');
+  const logBox = document.getElementById('log-box');
+
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(()=>toast.classList.remove('show'), 2500);
+  }
+  
+  function logEvent(text){
+    const row = document.createElement('div');
+    row.style.cssText='font-size:12px;margin-bottom:6px';
+    const ts = new Date().toLocaleString();
+    row.innerHTML = `<span style="color:#64748b">${ts}:</span> ${text}`;
+    if (logBox.firstElementChild && logBox.firstElementChild.textContent.includes('fără evenimente')) {
+      logBox.innerHTML='';
+    }
+    logBox.prepend(row);
+  }
+
+  /* ===== QUICK-ORDERS Handlers ===== */
+  function handleQO(action){
+    switch(action){
+      case 'hbA1c': showToast('HbA1c comandată'); logEvent('Comandă laborator: HbA1c'); break;
+      case 'uacr': showToast('UACR comandată'); logEvent('Comandă laborator: UACR'); break;
+      case 'mamografie': showToast('Mamografie – cerere programare trimisă'); logEvent('Cerere programare: Mamografie'); break;
+      case 'fund-ochi': showToast('Trimitere Fund de ochi generată'); logEvent('Trimitere: Fund de ochi'); break;
+      case 'nutritie': showToast('Programare Nutriționist inițiată'); logEvent('Programare: Nutriție'); break;
+      case 'metformina': showToast('Rețetă Metformină generată'); logEvent('Rețetă: Metformină'); break;
+      case 'levotiroxina': showToast('Rețetă Levotiroxină generată'); logEvent('Rețetă: Levotiroxină'); break;
+      case 'ipp': showToast('Rețetă IPP generată'); logEvent('Rețetă: IPP'); break;
+      default: showToast('Acțiune executată'); logEvent('Acțiune executată: '+action);
+    }
+  }
+  
+  document.querySelectorAll('[data-qo]').forEach(btn=>{
+    btn.addEventListener('click', ()=> handleQO(btn.dataset.qo));
+  });
+  
+  document.querySelectorAll('[data-qo-snooze]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      showToast(`Amânat: ${btn.dataset.qoSnooze}`);
+      logEvent('Snooze pentru: '+btn.dataset.qoSnooze);
+    });
+  });
+
+  /* ===== Medication actions ===== */
+  document.querySelectorAll('[data-med-stop]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const med = btn.dataset.medStop;
+      showToast(`Medicație oprită: ${med}`);
+      logEvent('Oprire medicament: '+med);
+    });
+  });
+  
+  document.querySelectorAll('[data-med-taper]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const med = btn.dataset.medTaper;
+      showToast(`Inițiată deprescriere: ${med}`);
+      logEvent('Deprescriere inițiată: '+med);
+    });
+  });
+  
+  document.getElementById('btn-genereaza-reteta')?.addEventListener('click', ()=>{
+    showToast('Rețetă combinată generată (Metformină + Levotiroxină + IPP)');
+    logEvent('Rețetă combinată generată');
+  });
+
+  /* ===== Medic de familie: call/message/sumar ===== */
+  document.getElementById('btn-suna-mf')?.addEventListener('click', ()=>{
+    showToast('Sună medicul de familie…');
+    logEvent('Apel către medicul de familie');
+  });
+  
+  document.getElementById('btn-mesaj-mf')?.addEventListener('click', ()=>{
+    showToast('Mesaj trimis medicului de familie');
+    logEvent('Mesaj către medicul de familie');
+  });
+  
+  document.getElementById('btn-trimite-sumar-mf')?.addEventListener('click', ()=>{
+    showToast('Sumar clinic trimis medicului de familie');
+    logEvent('Trimis sumar clinic medicului de familie');
+  });
+
+  /* ===== Preferințe comunicare & limba ===== */
+  const selChannel = document.getElementById('sel-channel');
+  const selLang = document.getElementById('sel-lang');
+  
+  document.getElementById('btn-save-prefs')?.addEventListener('click', ()=>{
+    const prefs = { channel: selChannel.value, lang: selLang.value };
+    showToast('Preferințe salvate');
+    logEvent(`Preferințe comunicare actualizate: ${prefs.channel}, ${prefs.lang}`);
+  });
+
+  /* ===== Preia din istoric ===== */
+  const preiaBtn = document.getElementById('btn-preia-istoric');
+  if (preiaBtn){
+    preiaBtn.addEventListener('click', function(){
+      const anam = document.querySelector('#anamneza textarea');
+      if (anam){
+        anam.value=`Pacienta se prezintă pentru control diabet zaharat tip 2 și tiroidită autoimună.
+
+Simptome actuale: 
+- Sete crescută în ultimele 2 săptămâni
+- Oboseală mai mare decât de obicei
+- Dureri gastrice ocazionale
+
+Medicație actuală:
+- Metformină 500mg 2x/zi - compliance aproximativ 80%
+- Levotiroxină 50μg - se administrează regulat
+
+Context relevant din istoric:
+- Ultima HbA1c: 7.2% (vs 6.8%)
+- Gastrită cronică diagnosticată recent
+- Screening mamografie depășit`;
+      }
+      const inputs = document.querySelectorAll('#clinic input');
+      if (inputs.length>=4){
+        inputs[0].value='TA: 140/85';
+        inputs[1].value='Puls: 78 bpm';
+        inputs[2].value='Greutate: 75 kg';
+        inputs[3].value='BMI: 28.5';
+      }
+    });
+  }
+
+  /* ===== Collapse pe mobil: cardurile de boală ===== */
+  document.querySelectorAll('.disease-card').forEach(card=>{
+    const header = card.querySelector('.disease-header');
+    const body = card.querySelector('.disease-body');
+    if (!header || !body) return;
+    header.style.cursor='pointer';
+
+    function closeBody(){
+      body.classList.add('collapsed');
+      body.style.maxHeight='0px';
+      body.style.overflow='hidden';
+    }
+    function openBody(){
+      body.classList.remove('collapsed');
+      body.style.overflow='hidden';
+      body.style.maxHeight=body.scrollHeight+'px';
+      setTimeout(()=>{ body.style.maxHeight=body.scrollHeight+'px'; },50);
+    }
+
+    // Mobil: pornește închis
+    if (window.matchMedia('(max-width: 768px)').matches){ closeBody(); }
+
+    header.addEventListener('click', ()=>{
+      const isOpen = !body.classList.contains('collapsed');
+      if (isOpen){ closeBody(); } else { openBody(); }
+    });
+
+    // Recalibrează maxHeight la resize
+    window.addEventListener('resize', ()=>{
+      if (!body.classList.contains('collapsed')){
+        body.style.maxHeight=body.scrollHeight+'px';
+      }
+    });
+  });
+</script>
+</body>
+</html>
